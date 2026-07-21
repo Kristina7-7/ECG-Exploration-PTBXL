@@ -6,9 +6,21 @@ This project explores real electrocardiogram (ECG) waveform data from the PTB-XL
 
 Unlike my UCI Heart Disease project, which uses tabular clinical features for machine learning classification, this project focuses on time-series ECG waveform data.
 
-The main goals are to understand the structure of 12-lead ECG data, visualize ECG signals, explore R-peak detection, and estimate heart rate from ECG recordings.
+The project began with exploring the structure of a single 12-lead ECG recording, including ECG visualization, waveform components, R-peak detection, and heart-rate estimation.
 
-This project focuses on ECG data exploration and basic signal processing. No machine learning or deep learning classification model was trained in this notebook.
+The analysis was then expanded to multiple ECG records to test whether the same R-peak detection method works consistently across different ECG signals.
+
+The main goals of this project are to:
+
+- Understand the structure of 12-lead ECG data
+- Visualize and compare ECG signals
+- Understand basic ECG waveform components
+- Detect R peaks using basic signal processing
+- Estimate heart rate from ECG recordings
+- Compare ECG examples with different diagnostic characteristics
+- Test the limitations of fixed R-peak detection parameters
+
+This project focuses on ECG data exploration and basic signal processing. No machine learning or deep learning classification model was trained.
 
 ---
 
@@ -16,11 +28,9 @@ This project focuses on ECG data exploration and basic signal processing. No mac
 
 This project uses the PTB-XL ECG dataset available through PhysioNet.
 
-PTB-XL contains clinical 12-lead ECG recordings.
+PTB-XL contains clinical 12-lead ECG recordings together with metadata and diagnostic information.
 
-An ECG records the electrical activity of the heart over time.
-
-Each recording contains 12 leads:
+Each ECG recording contains 12 leads:
 
 - I
 - II
@@ -35,7 +45,9 @@ Each recording contains 12 leads:
 - V5
 - V6
 
-Each lead observes the heart's electrical activity from a different direction.
+Each lead observes the electrical activity of the heart from a different direction.
+
+The dataset also contains metadata such as ECG IDs, file locations, and SCP codes that describe ECG findings and diagnostic information.
 
 ---
 
@@ -43,34 +55,40 @@ Each lead observes the heart's electrical activity from a different direction.
 
 ECG records were accessed using the WFDB Python package.
 
-An example record was loaded using:
+An ECG record can be loaded using:
 
 `wfdb.rdrecord()`
 
-The ECG signal can be accessed through:
+The waveform data can be accessed through:
 
 `record.p_signal`
 
-Additional information, such as the sampling rate and lead names, can be accessed through the record metadata.
+Other information can also be obtained from the record, including:
+
+- Sampling rate
+- Lead names
+- Signal dimensions
+
+The PTB-XL metadata was also explored to connect ECG waveform files with their ECG IDs and SCP codes.
 
 ---
 
 ## Understanding ECG Data Structure
 
-The ECG recording used in this exploration contains multiple sampling points for each of the 12 leads.
+The ECG recordings used in this project contain multiple sampling points for each of the 12 leads.
 
 A sampling point represents one measurement of the ECG signal at a specific moment in time.
 
 A sampling point is not the same as one heartbeat.
 
-For example, if an ECG is sampled at 100 Hz:
+For example, for the 100 Hz ECG recordings used in this exploration:
 
 - 100 samples = 1 second
 - 1000 samples = 10 seconds
 
 The recording duration can be calculated as:
 
-`Number of samples / Sampling rate`
+`Recording Duration = Number of Samples / Sampling Rate`
 
 Understanding the sampling rate is important because it allows sample positions to be converted into actual time in seconds.
 
@@ -84,7 +102,7 @@ All 12 ECG leads were plotted to compare their waveform patterns.
 
 Different leads show different amplitudes and morphologies because they observe the same electrical activity of the heart from different anatomical directions.
 
-The 12-lead visualization demonstrates that ECG data is multidimensional and that different leads provide complementary information.
+The 12-lead visualization demonstrates that ECG data is multidimensional and that different leads provide complementary information about cardiac electrical activity.
 
 ---
 
@@ -94,15 +112,17 @@ The 12-lead visualization demonstrates that ECG data is multidimensional and tha
 
 Selected leads, including Lead II, V1, and V6, were plotted separately for easier comparison.
 
-The waveform shapes differ among the leads even though they represent the same cardiac cycles.
+The waveform shapes differ among the leads even though they represent the same cardiac activity.
 
 These differences occur because each lead observes the electrical activity of the heart from a different direction.
+
+This comparison helped demonstrate why ECG analysis cannot treat all leads as identical signals.
 
 ---
 
 ## ECG Waveform Components
 
-A typical ECG waveform contains several important components:
+A typical ECG waveform contains several important components.
 
 ### P Wave
 
@@ -112,30 +132,32 @@ The P wave represents atrial depolarization.
 
 The QRS complex represents ventricular depolarization.
 
-The R wave is usually one of the most prominent peaks in the ECG signal.
+The R wave is often a prominent part of the QRS complex and can be used to help identify individual cardiac cycles.
 
 ### T Wave
 
 The T wave represents ventricular repolarization.
 
-Understanding these waveform components is important for interpreting ECG signals and developing future ECG analysis methods.
+Understanding these basic waveform components is important for interpreting ECG signals and developing future ECG analysis methods.
 
 ---
 
-## R-Peak Detection
+## Initial R-Peak Detection
 
 <img width="3038" height="1176" alt="leadII_rpeaks (1)" src="https://github.com/user-attachments/assets/aff3304c-a322-4974-9a11-7835cb40eb73" />
 
-R peaks were detected from Lead II using `scipy.signal.find_peaks()`.
+R-peak detection was first explored using Lead II and the `scipy.signal.find_peaks()` function.
 
 Two main parameters were used:
 
-- `height` — sets a minimum amplitude for detected peaks
+- `height` — sets a minimum amplitude required for a peak
 - `distance` — sets a minimum distance between consecutive detected peaks
 
-The detected peaks were plotted on top of the ECG waveform to visually check whether they aligned with the expected R waves.
+The detected peaks were plotted on top of the ECG waveform to visually examine whether they aligned with prominent ECG peaks.
 
-The selected parameters worked for the example recording, but they may not work equally well for all patients, ECG leads, or noisy signals.
+The method appeared to work reasonably well for the initial example. However, testing only one ECG cannot show whether the same parameters will work for other patients or abnormal ECG signals.
+
+This led to the next part of the project: testing the same method across multiple ECG records.
 
 ---
 
@@ -145,25 +167,132 @@ Heart rate was estimated using two methods.
 
 ### Method 1: Peak Count
 
-The number of detected R peaks was counted over the recording duration.
+The number of detected peaks was counted over the recording duration.
 
 Heart rate was estimated using:
 
-`Heart Rate = Number of R Peaks × 60 / Recording Duration`
+`Heart Rate = Number of Detected Peaks × 60 / Recording Duration`
+
+This method estimates the average heart rate based on the total number of detected peaks.
 
 ### Method 2: Median R-R Interval
 
-The R-R interval represents the time between consecutive R peaks.
+The R-R interval represents the time between consecutive detected R peaks.
 
 The intervals were calculated using the detected peak positions and the ECG sampling rate.
 
-Heart rate was then estimated using:
+Heart rate was estimated using:
 
 `Heart Rate = 60 / Median R-R Interval`
 
-The two methods produced similar heart-rate estimates for the example ECG recording.
+Using the median R-R interval reduces the influence of individual unusually long or short intervals compared with relying on one interval.
 
-The median R-R interval provides another way to estimate heart rate without relying only on the total number of peaks counted during the recording.
+The two methods produced similar results for the initial ECG example, but later testing showed that they can differ when peak detection is inconsistent.
+
+---
+
+## Testing the Method Across Multiple ECG Records
+
+To test whether the same R-peak detection method works across different ECG signals, the analysis was expanded to five PTB-XL ECG records.
+
+Examples were selected using the PTB-XL metadata and SCP codes.
+
+The selected records included:
+
+- ECG 1 — normal ECG example
+- ECG 3 — normal ECG example
+- ECG 8 — MI-related example
+- ECG 22 — ST/T change-related example
+- ECG 17 — atrial flutter/atrial fibrillation-related example
+
+All five records contained:
+
+- 1000 sampling points
+- 12 ECG leads
+- 100 Hz sampling rate
+- Approximately 10 seconds of ECG data
+
+The same peak-detection approach was applied to Lead II for all five records.
+
+This allowed the method to be tested under different ECG waveform characteristics instead of evaluating only one example.
+
+---
+
+## R-Peak and Heart Rate Comparison
+
+The detected peaks and heart-rate estimates were compared across the five ECG records.
+
+| ECG ID | Detected Peaks | Peak Count HR | Median R-R HR |
+|---|---:|---:|---:|
+| 1 | 11 | 66.0 bpm | 64.2 bpm |
+| 3 | 11 | 66.0 bpm | 63.8 bpm |
+| 8 | 9 | 54.0 bpm | 73.2 bpm |
+| 22 | 10 | 60.0 bpm | 77.9 bpm |
+| 17 | 12 | 72.0 bpm | 70.6 bpm |
+
+ECG 1, ECG 3, and ECG 17 showed relatively similar heart-rate estimates between the two calculation methods.
+
+However, ECG 8 and ECG 22 showed much larger differences.
+
+This indicated that comparing numerical heart-rate estimates alone was not enough. The detected peaks also needed to be visually inspected on the original ECG waveforms.
+
+---
+
+## R-Peak Detection Across Different ECGs
+
+### Normal ECG Example — ECG 1
+
+<img width="3038" height="1176" alt="ecg_1_rpeak_detection" src="https://github.com/user-attachments/assets/c4edd8fe-ea8e-4ed7-b180-12291219bad8" />
+
+For ECG 1, the detected peaks were relatively consistent and appeared on prominent positive peaks.
+
+The regular spacing of the detected peaks also produced similar heart-rate estimates between the peak-count and median R-R methods.
+
+---
+
+### Failure Case — ECG 8
+
+<img width="3038" height="1176" alt="ecg_8_rpeak_detection" src="https://github.com/user-attachments/assets/76b18f83-aa5d-4cb6-85de-f04e7ad5f46f" />
+
+
+ECG 8 showed one of the clearest limitations of the fixed peak-detection method.
+
+There was a long interval where possible QRS complexes were not detected by the fixed positive height threshold.
+
+This produced a large difference between the two estimated heart rates:
+
+- Peak-count estimate: 54.0 bpm
+- Median R-R estimate: 73.2 bpm
+
+This suggests that changes in waveform amplitude, morphology, or baseline can cause a fixed threshold to miss possible cardiac peaks.
+
+---
+
+### Complex Abnormal ECG Example — ECG 17
+
+<img width="3038" height="1176" alt="ecg_17_rpeak_detection" src="https://github.com/user-attachments/assets/d1be582c-0ba5-423d-b3f0-005e4a14a0fc" />
+
+ECG 17 showed a more complex and rapidly changing waveform.
+
+Although the two calculated heart-rate values were relatively similar, the waveform demonstrates that agreement between two heart-rate calculations does not automatically prove that every detected peak is a true R peak.
+
+Both heart-rate calculations depend on the same detected peak positions.
+
+Therefore, visual inspection and more robust ECG processing methods are important when evaluating peak detection.
+
+---
+
+## Main Observation
+
+The same fixed peak-detection parameters did not perform equally well across all ECG records.
+
+The method worked relatively well for some ECG examples, particularly the normal ECG records, but detection became less consistent for some abnormal or more complex waveforms.
+
+The results demonstrate an important limitation of simple ECG signal-processing methods:
+
+**Parameters that work for one ECG may not generalize to every patient or cardiac condition.**
+
+ECG amplitude, morphology, baseline variation, rhythm, and noise can all affect peak detection.
 
 ---
 
@@ -173,11 +302,12 @@ The project includes visualizations of:
 
 - All 12 ECG leads
 - Individual ECG waveforms
-- Selected lead comparisons
-- R-peak detection
+- Selected Lead II, V1, and V6 comparisons
+- Initial R-peak detection
+- R-peak detection across multiple ECG records
 - ECG signals displayed using time in seconds
 
-The figures help connect the raw numerical ECG data with recognizable cardiac waveform patterns.
+These visualizations help connect raw numerical ECG data with recognizable waveform patterns and make it easier to identify limitations in automated signal-processing methods.
 
 ---
 
@@ -194,9 +324,11 @@ Models may learn patterns related to:
 - Timing relationships
 - Differences across ECG leads
 
-These patterns can potentially support classification tasks involving cardiac abnormalities.
+However, this exploration also demonstrates an important step that comes before model development: understanding the data and preprocessing methods.
 
-However, this notebook does not train an AI classification model.
+If ECG preprocessing or peak detection is inaccurate, the features provided to a machine learning model may also be inaccurate.
+
+This notebook does not train an AI classification model.
 
 Instead, it provides a foundation for future work involving ECG preprocessing, feature extraction, classification, and deep learning.
 
@@ -206,43 +338,71 @@ Instead, it provides a foundation for future work involving ECG preprocessing, f
 
 Through this project, I learned how to:
 
-- Access real ECG data using WFDB
+- Access real ECG waveform data using WFDB
+- Explore PTB-XL metadata and SCP codes
+- Connect ECG metadata with waveform records
 - Understand the structure of 12-lead ECG recordings
 - Understand the difference between sampling points and heartbeats
 - Use sampling rate to convert samples into time
 - Visualize all 12 ECG leads
 - Compare ECG signals across different leads
 - Identify basic P, QRS, and T waveform components
-- Detect R peaks using signal-processing methods
+- Detect peaks using basic signal-processing methods
 - Calculate R-R intervals
-- Estimate heart rate using two methods
+- Estimate heart rate using peak count and median R-R intervals
+- Compare the same analysis method across multiple ECG records
+- Visually evaluate whether detected peaks are reasonable
+- Recognize the limitations of fixed peak-detection parameters
 - Understand how ECG waveform data differs from tabular clinical data
 
 ---
 
 ## Limitations
 
-This project is an introductory ECG exploration rather than a clinical diagnostic system.
+This project is an introductory ECG exploration and should not be interpreted as a clinical diagnostic system.
 
 Important limitations include:
 
-- Only a limited number of ECG examples were explored.
-- R-peak detection parameters were manually selected.
-- Noise and abnormal ECG morphology may affect peak detection.
-- Heart-rate estimation depends on accurate R-peak detection.
-- No ECG classification model was trained or validated.
+- Only a small number of ECG records were examined in detail.
+- Peak-detection parameters were manually selected.
+- The same fixed parameters may not work for all ECG morphologies.
+- A simple positive height threshold may miss QRS complexes with different amplitudes or orientations.
+- Noise and baseline variation may affect peak detection.
+- Heart-rate estimates depend on the accuracy of the detected peaks.
+- Detected peaks from the algorithm were not independently confirmed as true R peaks using expert annotations.
+- Diagnostic labels were used mainly to select different ECG examples rather than to make clinical predictions.
+- No machine learning or deep learning classification model was trained or validated.
 - The results should not be interpreted as clinical diagnoses.
 
-A more advanced project could apply preprocessing to a larger number of PTB-XL records and train a machine learning or deep learning model for ECG classification.
+Future work could use more advanced preprocessing, adaptive thresholds, dedicated QRS detection algorithms, and larger numbers of ECG records.
+
+---
+
+## Future Work
+
+Possible next steps include:
+
+1. Apply ECG filtering and baseline correction before peak detection.
+2. Compare fixed thresholds with adaptive R-peak detection methods.
+3. Test the method on a larger number of PTB-XL records.
+4. Compare performance across different diagnostic groups.
+5. Explore automated ECG feature extraction.
+6. Use ECG waveform data as input for machine learning or deep learning classification models.
+
+These steps would extend the project from basic ECG exploration toward a more complete AI-based ECG analysis workflow.
 
 ---
 
 ## Conclusion
 
-This project provided an introduction to working with real ECG waveform data.
+This project provided an introduction to working with real clinical ECG waveform data from PTB-XL.
 
-I learned how ECG signals are stored as time-series data, how the 12 leads provide different views of cardiac electrical activity, and how R peaks can be used to estimate heart rate.
+I first explored how ECG signals are stored as time-series data, how the 12 leads provide different views of cardiac electrical activity, and how basic R-peak detection can be used to estimate heart rate.
 
-Compared with my UCI Heart Disease project, this project helped me understand an important difference between two types of medical data: tabular clinical data and physiological waveform data.
+I then expanded the analysis from one ECG to multiple records with different diagnostic characteristics.
 
-This ECG exploration provides a foundation for future work in ECG preprocessing, feature extraction, and AI-based ECG classification.
+This comparison showed that a method that appears to work well on one ECG may not perform equally well on other signals. In particular, fixed peak-detection parameters were affected by differences in ECG waveform amplitude and morphology.
+
+Compared with my UCI Heart Disease project, this project helped me understand an important difference between tabular clinical data and physiological waveform data. It also demonstrated the importance of data exploration and validation before applying AI or machine learning methods to medical data.
+
+This project provides a foundation for future work in ECG preprocessing, feature extraction, and AI-based ECG classification.
