@@ -19,6 +19,7 @@ The main goals of this project are to:
 - Estimate heart rate from ECG recordings
 - Compare ECG examples with different diagnostic characteristics
 - Test the limitations of fixed R-peak detection parameters
+- Compare fixed and adaptive threshold methods for R-peak detection
 
 This project focuses on ECG data exploration and basic signal processing. No machine learning or deep learning classification model was trained.
 
@@ -296,6 +297,66 @@ ECG amplitude, morphology, baseline variation, rhythm, and noise can all affect 
 
 ---
 
+## Fixed vs Adaptive Threshold Experiment
+
+A simple adaptive threshold method was tested to determine whether using a record-specific threshold could improve R-peak detection.
+
+The fixed method used the same threshold for every ECG:
+
+`height = 0.2`
+
+The adaptive threshold was calculated separately for each ECG using:
+
+`Adaptive Threshold = Mean of Signal + 0.5 × Standard Deviation of Signal`
+
+The minimum peak distance was kept the same so that the main change between the two methods was the height threshold.
+
+Both methods were compared using:
+
+- Number of detected peaks
+- Peak-count heart rate
+- Median R-R interval heart rate
+- Difference between the two heart-rate estimates
+- Visual inspection of detected peak locations
+
+---
+
+## Fixed vs Adaptive Results
+
+The effect of adaptive thresholding was different across the five ECG records.
+
+| ECG ID | Fixed HR Difference | Adaptive HR Difference | Observation |
+|---|---:|---:|---|
+| 1 | 1.8 bpm | 1.8 bpm | Little or no change |
+| 3 | 2.2 bpm | 2.2 bpm | Little or no change |
+| 8 | 19.2 bpm | 19.2 bpm | Large disagreement remained |
+| 22 | 17.9 bpm | 0.4 bpm | Large improvement in consistency |
+| 17 | 1.4 bpm | 3.5 bpm | Adaptive result became less consistent |
+
+For ECG 1 and ECG 3, the two methods produced similar results.
+
+For ECG 8, a large difference between the two heart-rate estimates remained even after using the adaptive threshold.
+
+ECG 22 showed the largest improvement. The difference between the two heart-rate estimates decreased from 17.9 bpm with the fixed threshold to 0.4 bpm with the adaptive threshold.
+
+For ECG 17, the difference increased from 1.4 bpm to 3.5 bpm. Visual inspection also showed an additional smaller peak detected by the adaptive method that may not represent a true R peak.
+
+Overall, the adaptive threshold improved detection consistency for some ECGs, especially ECG 22, but did not consistently improve every recording.
+
+---
+
+## What I Learned from the Threshold Comparison
+
+This experiment showed that an adaptive threshold is not automatically better than a fixed threshold.
+
+Lowering or changing the threshold may help detect peaks that were missed by a fixed threshold, but it may also detect additional smaller peaks.
+
+ECG signals vary between records, so a simple threshold based only on the mean and standard deviation may not be enough to accurately detect R peaks in every ECG.
+
+The results suggest that R-peak detection should consider more than only signal amplitude.
+
+---
+
 ## Visualization
 
 The project includes visualizations of:
@@ -305,6 +366,7 @@ The project includes visualizations of:
 - Selected Lead II, V1, and V6 comparisons
 - Initial R-peak detection
 - R-peak detection across multiple ECG records
+- Adaptive-threshold peak detection
 - ECG signals displayed using time in seconds
 
 These visualizations help connect raw numerical ECG data with recognizable waveform patterns and make it easier to identify limitations in automated signal-processing methods.
@@ -354,6 +416,7 @@ Through this project, I learned how to:
 - Visually evaluate whether detected peaks are reasonable
 - Recognize the limitations of fixed peak-detection parameters
 - Understand how ECG waveform data differs from tabular clinical data
+- Compare fixed and adaptive thresholds
 
 ---
 
@@ -395,14 +458,14 @@ These steps would extend the project from basic ECG exploration toward a more co
 
 ## Conclusion
 
-This project provided an introduction to working with real clinical ECG waveform data from PTB-XL.
+This project provided an introduction to working with real ECG waveform data and showed how the analysis developed from exploring one ECG to comparing signal-processing methods across multiple records.
 
-I first explored how ECG signals are stored as time-series data, how the 12 leads provide different views of cardiac electrical activity, and how basic R-peak detection can be used to estimate heart rate.
+I learned how ECG signals are stored as time-series data, how the 12 leads provide different views of cardiac electrical activity, and how detected R peaks can be used to estimate heart rate.
 
-I then expanded the analysis from one ECG to multiple records with different diagnostic characteristics.
+The fixed-versus-adaptive threshold experiment showed that the hypothesis was partially supported. The adaptive threshold produced more consistent heart-rate estimates for ECG 22, but it did not improve all ECG records and introduced a questionable additional detection in ECG 17.
 
-This comparison showed that a method that appears to work well on one ECG may not perform equally well on other signals. In particular, fixed peak-detection parameters were affected by differences in ECG waveform amplitude and morphology.
+Therefore, a simple adaptive threshold is not universally better than a fixed threshold. Different ECG signals may require more robust signal-processing methods for reliable R-peak detection.
 
-Compared with my UCI Heart Disease project, this project helped me understand an important difference between tabular clinical data and physiological waveform data. It also demonstrated the importance of data exploration and validation before applying AI or machine learning methods to medical data.
+Compared with my UCI Heart Disease project, this project also helped me understand an important difference between two types of medical data: tabular clinical data and physiological waveform data.
 
-This project provides a foundation for future work in ECG preprocessing, feature extraction, and AI-based ECG classification.
+This ECG exploration provides a foundation for future work in ECG preprocessing, feature extraction, and AI-based ECG classification.
